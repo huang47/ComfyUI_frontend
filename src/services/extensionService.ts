@@ -1,5 +1,7 @@
 import { useCurrentUser } from '@/composables/auth/useCurrentUser'
 import { useErrorHandling } from '@/composables/useErrorHandling'
+import { classifyExtensionLoadError } from '@/services/extensionLoadError'
+import { reportRumError } from '@/services/rumError'
 import { legacyMenuCompat } from '@/lib/litegraph/src/contextMenuCompat'
 import { useSettingStore } from '@/platform/settings/settingStore'
 import { api } from '@/scripts/api'
@@ -14,6 +16,29 @@ import type { ComfyExtension } from '@/types/comfy'
 import type { AuthUserInfo } from '@/types/authTypes'
 import { app } from '@/scripts/app'
 import type { ComfyApp } from '@/scripts/app'
+
+function reportExtensionLoadError(extension: string, error: unknown): void {
+  const detail = error instanceof Error ? error.message : String(error)
+  const kind = classifyExtensionLoadError(error)
+  reportRumError(
+    'ExtensionLoadError',
+    `[${kind}] ${extension}: ${detail}`,
+    error
+  )
+}
+
+function reportExtensionMethodError(
+  extension: string,
+  method: string,
+  error: unknown
+): void {
+  const detail = error instanceof Error ? error.message : String(error)
+  reportRumError(
+    'ExtensionMethodError',
+    `${extension}#${method}: ${detail}`,
+    error
+  )
+}
 
 export const useExtensionService = () => {
   const extensionStore = useExtensionStore()
@@ -47,6 +72,7 @@ export const useExtensionService = () => {
             await import(/* @vite-ignore */ api.fileURL(ext))
           } catch (error) {
             console.error('Error loading extension', ext, error)
+            reportExtensionLoadError(ext, error)
           }
         })
     )
@@ -178,6 +204,7 @@ export const useExtensionService = () => {
             { extension: ext },
             { args }
           )
+          reportExtensionMethodError(ext.name, method, error)
         }
       }
     }
@@ -229,6 +256,7 @@ export const useExtensionService = () => {
               { extension: ext },
               { args }
             )
+            reportExtensionMethodError(ext.name, method, error)
           }
         }
       })

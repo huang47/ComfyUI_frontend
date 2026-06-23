@@ -13,6 +13,7 @@ import type {
 } from '@/platform/assets/schemas/assetSchema'
 import { isCloud } from '@/platform/distribution/types'
 import { useToastStore } from '@/platform/updates/common/toastStore'
+import { reportRumError } from '@/services/rumError'
 import type { ShareableAssetsResponse } from '@/schemas/apiSchema'
 import { zShareableAssetsResponse } from '@/schemas/apiSchema'
 import type { IFuseOptions } from 'fuse.js'
@@ -845,8 +846,14 @@ export class ComfyApi extends EventTarget {
    * @returns The node definitions
    */
   async getNodeDefs(): Promise<Record<string, ComfyNodeDef>> {
-    const resp = await this.fetchApi('/object_info', { cache: 'no-store' })
-    return await resp.json()
+    try {
+      const resp = await this.fetchApi('/object_info', { cache: 'no-store' })
+      return await resp.json()
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error)
+      reportRumError('NodeDefsFetchError', `object_info: ${detail}`, error)
+      throw error
+    }
   }
 
   /**

@@ -21,6 +21,10 @@ declare global {
     VITE_APP_VERSION?: string
     VITE_STAGING_API_BASE_URL?: string
     VITE_STAGING_PLATFORM_BASE_URL?: string
+    VITE_DATADOG_RUM_APPLICATION_ID?: string
+    VITE_DATADOG_RUM_CLIENT_TOKEN?: string
+    VITE_DATADOG_RUM_SITE?: string
+    VITE_DD_RUM_REPLAY_TEST?: string
   }
 
   interface ImportMeta {
